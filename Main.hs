@@ -35,7 +35,7 @@ main = do
             _       -> error $ "Invalid filename/extension: " <> cImgPath2
       in name1 <> "-" <> name2 <> ".png"
 
-    validateCLI cli@(CLI _ _ cProb1 cProb2) =
+    validateCLI cli@(CLI _ _ _ cProb1 cProb2) =
       if cProb1 < 1 || cProb1 > 99 || cProb2 < 1 || cProb2 > 99 || cProb1 + cProb2 /= 100
       then Left "Options should be integers in the range [1, 99], and should add up to 100."
       else Right cli
@@ -45,23 +45,28 @@ main = do
     parseCLI = CLI
       <$> strOption (long "first-path" <> help "Path the the first image.")
       <*> strOption (long "second-path" <> help "Path the the second image.")
-      <*> option auto (long "first-prob" <> help "Integer in the range 1-99 representing the probability of choosing a row from the first image.")
-      <*> option auto (long "second-prob" <> help "Integer in the range 1-99 representing the probability of choosing a row from the second image.")
+      <*> switch (short 'c' <> help "Switch columns instead of rows.")
+      <*> option auto (long "first-prob" <> help "Integer in the range 1-99 representing the probability of choosing a row / col from the first image.")
+      <*> option auto (long "second-prob" <> help "Integer in the range 1-99 representing the probability of choosing a row / col from the second image.")
 
 
 -- | CLI.
 data CLI = CLI
   { cImgPath1 :: FilePath -- ^ Path to the first image.
   , cImgPath2 :: FilePath -- ^ Path to the second image.
-  , cProb1    :: Int -- ^ Probability of choosing a row from the first image.
-  , cProb2    :: Int -- ^ Probability of choosing a row from the second image.
+  , cCols     :: Bool -- ^ Swap cols instead of rows.
+  , cProb1    :: Int -- ^ Probability of choosing a row  / col from the first image.
+  , cProb2    :: Int -- ^ Probability of choosing a row / col from the second image.
   } deriving (Eq, Show)
 
+-- | Rows or cols
+data Direction = Row | Col deriving (Eq, Show)
 
 -- | Configuration for image generation.
 data SwapOpts = SwapOpts
   { soImg1 :: [Int] -- ^ List of indicies to take from the first image.
   , soImg2 :: [Int] -- ^ List of indicies to take from the second image.
+  , soDir  :: Direction -- ^ Rows or cols
   } deriving (Eq, Show)
 
 
@@ -83,13 +88,17 @@ makeSwapOpts
   -> Image PixelRGBA8 -- ^ Canvas.
   -> IO SwapOpts
 makeSwapOpts CLI {..} Image {..} = do
-  let n' = floor $ fromIntegral (imageHeight * cProb1) / 100
+  let (dim, soDir) = case cCols of
+        False -> (imageHeight, Row)
+        True  -> (imageWidth, Col)
+  let n' = floor $ fromIntegral (dim * cProb1) / 100
       n = case n' `mod` 2 of
         0 -> n'
         1 -> n' + 1
         _ -> error "Mathematics is broken."
-  soImg1 <- runRVar (sample n [0..imageHeight - 1]) StdRandom :: IO [Int]
-  let soImg2 = [0..imageHeight - 1] \\ soImg1
+  soImg1 <- runRVar (sample n [0..dim - 1]) StdRandom :: IO [Int]
+  let soImg2 = [0..dim - 1] \\ soImg1
+
   return SwapOpts {..}
 
 
@@ -101,7 +110,9 @@ makeImage
   -> Image PixelRGBA8 -- ^ Canvas.
   -> Image PixelRGBA8
 makeImage SwapOpts {..} src1 src2 canvas =
-  writeRows soImg2 src2 $ writeRows soImg1 src1 canvas
+  case soDir of
+    Row -> writeRows soImg2 src2 $ writeRows soImg1 src1 canvas
+    Col -> writeCols soImg2 src2 $ writeCols soImg1 src1 canvas
 
 
 -- | Write a list of rows from @src@ into @canvas@.
@@ -128,3 +139,27 @@ writeRow rix src canvas = runST $ do
           | otherwise = do
               writePixel mimg c rix (pixelAt src c rix)
               go (c + 1) mimg
+
+-- | Write a list of cols from @src@ into @canvas@.
+writeCols
+  :: [Int] -- ^ List of rows to write.
+  -> Image PixelRGBA8 -- ^ Image to write rows from.
+  -> Image PixelRGBA8 -- ^ Canvas.
+  -> Image PixelRGBA8
+writeCols [] _ acc           = acc
+writeCols (cix:cixs) src acc = writeCols cixs src (writeCol cix src acc)
+
+-- | Write one col from the source image.
+writeCol
+  :: Int -- ^ The column index.
+  -> Image PixelRGBA8 -- ^ Image to write row from.
+  -> Image PixelRGBA8 -- ^ Canvas.
+  -> Image PixelRGBA8
+writeCol cix src canvas = runST $ do
+  mimg <- unsafeThawImage canvas
+  go 0 mimg
+  where go !r !mimg
+          | r >= imageHeight canvas = unsafeFreezeImage mimg
+          | otherwise = do
+              writePixel mimg cix r (pixelAt src cix r)
+              go (r + 1) mimg
