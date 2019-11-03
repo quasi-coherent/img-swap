@@ -1,0 +1,31 @@
+name:                img-swap
+version:             0.1.0.0
+github:              "quasi-coherent/img-swap"
+license:             BSD3
+author:              "Daniel Donohue"
+maintainer:          "d.michael.donohue@gmail.com"
+copyright:           "2019 Daniel Donohue"
+
+extra-source-files:
+- README.md
+
+description: Please see the README on GitHub at <https://github.com/quasi-coherent/img-swap#readme>
+
+executables:
+  img-swap:
+    main: Main.hs
+    source-dirs: .
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    - -Wall
+    dependencies:
+    - base >= 4.7 && < 5
+    - JuicyPixels
+    - lens
+    - optparse-applicative
+    - random-extras
+    - random-fu
+    - split
+    - vector

@@ -1,0 +1,43 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.31.2.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: 768f62b4edf67ac04d35c4c3f37ae5687b9c27b034874412916005a31a73be85
+
+name:           img-swap
+version:        0.1.0.0
+description:    Please see the README on GitHub at <https://github.com/quasi-coherent/img-swap#readme>
+homepage:       https://github.com/quasi-coherent/img-swap#readme
+bug-reports:    https://github.com/quasi-coherent/img-swap/issues
+author:         Daniel Donohue
+maintainer:     d.michael.donohue@gmail.com
+copyright:      2019 Daniel Donohue
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+
+source-repository head
+  type: git
+  location: https://github.com/quasi-coherent/img-swap
+
+executable img-swap
+  main-is: Main.hs
+  other-modules:
+      Paths_img_swap
+  hs-source-dirs:
+      ./.
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wall
+  build-depends:
+      JuicyPixels
+    , base >=4.7 && <5
+    , lens
+    , optparse-applicative
+    , random-extras
+    , random-fu
+    , split
+    , vector
+  default-language: Haskell2010
