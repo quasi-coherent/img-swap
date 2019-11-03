@@ -83,13 +83,13 @@ makeSwapOpts
   -> Image PixelRGBA8 -- ^ Canvas.
   -> IO SwapOpts
 makeSwapOpts CLI {..} Image {..} = do
-  let n' = floor $ fromIntegral (imageWidth * cProb1) / 100
+  let n' = floor $ fromIntegral (imageHeight * cProb1) / 100
       n = case n' `mod` 2 of
         0 -> n'
         1 -> n' + 1
         _ -> error "Mathematics is broken."
-  soImg1 <- runRVar (sample n [0..imageWidth - 1]) StdRandom :: IO [Int]
-  let soImg2 = [0..imageWidth - 1] \\ soImg1
+  soImg1 <- runRVar (sample n [0..imageHeight - 1]) StdRandom :: IO [Int]
+  let soImg2 = [0..imageHeight - 1] \\ soImg1
   return SwapOpts {..}
 
 
