@@ -19,3 +19,11 @@ Available options:
   --second-prob ARG        Integer in the range 1-99 representing the
                            probability of choosing a row from the second image.
 ```
+
+## examples
+
+![orig1](repo_assets/orig1.jpg)
+
+![orig2](repo_assets/orig2.jpg)
+
+![combined](repo_assets/orig1-orig2.png)
